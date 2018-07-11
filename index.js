@@ -15,6 +15,15 @@ function flatten (target, opts) {
     currentDepth = currentDepth || 1
     Object.keys(object).forEach(function (key) {
       var value = object[key]
+
+      if (opts.replacer) {
+        value = opts.replacer(key, object[key], prev)
+
+        if (value === undefined) {
+          return
+        }
+      }
+
       var isarray = opts.safe && Array.isArray(value)
       var type = Object.prototype.toString.call(value)
       var isbuffer = isBuffer(value)

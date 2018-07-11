@@ -180,6 +180,57 @@ suite('Flatten', function () {
       'hello.0500': 'darkness my old friend'
     })
   })
+
+  test('Should use the replacer function if one is given', function () {
+    assert.deepEqual(flatten({
+      a: {
+        b: "c",
+        d: {
+          e: 123
+        },
+        unwanted: {
+          field: "value"
+        }
+      },
+      secret: {
+        info: {
+          secret1: "the moon landing never happened",
+          secret2: {
+            secret3: "the earth is flat",
+          }
+        },
+      },
+      emptyObj1: {},
+      emptyObj2: {},
+      emptyArray1: [],
+      emptyArray2: []
+    }, {
+      replacer: function(childKey, childValue, parentKey) {
+	console.log(parentKey + "::" + childKey + " = " + childValue)
+        if (parentKey == "secret.info") {
+          return "a secret value"
+        } else if (typeof(childValue) == "object" && Object.keys(childValue).length === 0) {
+	  console.log("IT IS AN EMPTY OBJECT!!")
+          if (childKey == "emptyObj1" || childKey == "emptyArray1") {
+            return undefined
+          } else {
+            return "AN EMPTY ARRAY|OBJECT"
+          }
+        } else if (childKey == "unwanted") {
+          return undefined
+        } else {
+          return childValue
+        }
+      }
+    }), {
+      "a.b": "c",
+      "a.d.e": 123,
+      "secret.info.secret1": "a secret value",
+      "secret.info.secret2": "a secret value",
+      "emptyObj2": "AN EMPTY ARRAY|OBJECT",
+      "emptyArray2": "AN EMPTY ARRAY|OBJECT"
+    })
+  })
 })
 
 suite('Unflatten', function () {
@@ -301,6 +352,48 @@ suite('Unflatten', function () {
       },
       'good.morning.again': {
         'testing.this': 'out'
+      }
+    }))
+  })
+
+  test('should use replacer when unflattening', function () {
+    assert.deepEqual({
+      hello: { world: 'again' },
+      lorem: {
+        ipsum: {
+	  soralis: "another-altered"
+	},
+      },
+      good: {
+        morning: {
+          hash: {
+            key: "a new value"
+          },
+          again: { testing: { 'this': 'out' } }
+        }
+      }
+    }, unflatten({
+      'hello.world': 'again',
+      'lorem.ipsum.soralis': 'another',
+      'good.morning': {
+        'hash.key': {
+          'nested.deep': {
+            'and.even.deeper.still': 'hello'
+          }
+        }
+      },
+      'good.morning.again': {
+        'testing.this': 'out'
+      }
+    }, {
+      replacer: function(childKey, childValue, parentKey) {
+	if (parentKey == "lorem.ipsum" && childKey == "soralis") {
+	  return childValue + "-altered"
+	} else if (parentKey == "good.morning.hash" && childKey == "key") {
+	  return "a new value"
+	} else {
+	  return childValue
+	}
       }
     }))
   })
